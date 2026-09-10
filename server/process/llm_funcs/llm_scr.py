@@ -9,7 +9,12 @@ from openai import OpenAI
 with open('character_config.yaml', 'r') as f:
     char_config = yaml.safe_load(f)
 
-client = OpenAI(api_key=char_config['OPENAI_API_KEY'])
+# Connects to OpenAI API by default. For local AI endpoints, it will use base_url if present.
+client_args = {"api_key": char_config.get('OPENAI_API_KEY', 'sk-local')}
+if 'base_url' in char_config and char_config['base_url']:
+    client_args['base_url'] = char_config['base_url']
+
+client = OpenAI(**client_args)
 
 # Constants
 HISTORY_FILE = char_config['history_file']
@@ -39,21 +44,28 @@ def save_history(history):
 
 
 
-def get_riko_response_no_tool(messages):
+def get_ai_response_no_tool(messages):
 
-    # Call OpenAI with system prompt + history
-    response = client.responses.create(
+    # Standard OpenAI chat completions endpoint.
+    # Depending on your local Hermes server support, you might need to adjust formatting.
+    # We are using standard chat.completions since it is widely supported by local OpenAI wrappers
+
+    # We reformat the messages here since many local runners don't yet support the beta "input_text" format
+    standard_messages = []
+    for msg in messages:
+        if isinstance(msg.get("content"), list):
+             # Just grab the first text item for simplicity
+             standard_messages.append({"role": msg["role"], "content": msg["content"][0]["text"]})
+        else:
+             standard_messages.append({"role": msg["role"], "content": msg["content"]})
+
+    response = client.chat.completions.create(
         model=MODEL,
-        input= messages,
-        temperature=1,
+        messages=standard_messages,
+        temperature=0.7,
         top_p=1,
-        max_output_tokens=2048,
+        max_tokens=2048,
         stream=False,
-        text={
-            "format": {
-            "type": "text"
-            }
-        },
     )
 
     return response
@@ -72,19 +84,20 @@ def llm_response(user_input):
     })
 
 
-    riko_test_response = get_riko_response_no_tool(messages)
+    ai_test_response = get_ai_response_no_tool(messages)
 
+    response_text = ai_test_response.choices[0].message.content
 
     # just append assistant message to regular response. 
     messages.append({
     "role": "assistant",
     "content": [
-        {"type": "output_text", "text": riko_test_response.output_text}
+        {"type": "output_text", "text": response_text}
     ]
     })
 
     save_history(messages)
-    return riko_test_response.output_text
+    return response_text
 
 
 if __name__ == "__main__":
