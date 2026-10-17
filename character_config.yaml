@@ -1,28 +1,22 @@
-# LLM backend: "openai" uses any OpenAI-compatible endpoint (see base_url below);
-# "opencode" drives the locally installed `opencode` CLI (supports the free tier).
-llm_provider: openai
-
 OPENAI_API_KEY: sk-local
-# To use a local API (e.g., LM Studio, Ollama with OpenAI compatibility, vLLM), provide the base_url here:
-base_url: "http://localhost:1234/v1"
+base_url: http://localhost:1234/v1
 history_file: chat_history.json
-model: "hermes-local"
-
-# Settings for llm_provider: opencode. Requires the `opencode` CLI on PATH.
+llm_provider: openai
+model: hermes-local
 opencode:
+  agent: voice-chat
   command: opencode
   model: opencode/big-pickle
-  agent: voice-chat
   timeout: 180
 presets:
   default:
-    system_prompt: |
-      You are a helpful, neutral AI assistant.
+    system_prompt: 'You are a helpful, neutral AI assistant.
+
       You provide clear, accurate, and concise answers.
 
+      '
 sovits_ping_config:
+  prompt_lang: en
+  prompt_text: This is a sample voice for the text to speech synthesis.
+  ref_audio_path: character_files/main_sample.wav
   text_lang: en
-  prompt_lang : en
-  ref_audio_path : character_files/main_sample.wav
-  prompt_text : This is a sample voice for the text to speech synthesis.
-  
