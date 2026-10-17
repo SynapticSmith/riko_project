@@ -5,7 +5,7 @@ This project provides a local AI conversational assistant. It listens, remembers
 **tested with python 3.10 Windows >10 and Linux Ubuntu**
 ## ✨ Features
 
-- 💬 **LLM-based dialogue** using any OpenAI-compatible local AI (e.g., LM Studio, Ollama, Hermes)
+- 💬 **LLM-based dialogue** using any OpenAI-compatible local AI (e.g., LM Studio, Ollama, Hermes) or the local **`opencode`** CLI (free tier supported)
 - 🧠 **Conversation memory** to keep context during interactions
 - 🔊 **Voice generation** via GPT-SoVITS API
 - 🎧 **Speech recognition** using Faster-Whisper
@@ -17,11 +17,23 @@ This project provides a local AI conversational assistant. It listens, remembers
 All prompts and parameters are stored in `character_config.yaml`.
 
 ```yaml
+# LLM backend: "openai" uses any OpenAI-compatible endpoint (see base_url below);
+# "opencode" drives the locally installed `opencode` CLI (supports the free tier).
+llm_provider: openai
+
 OPENAI_API_KEY: sk-local
 # To use a local API (e.g., LM Studio, Ollama with OpenAI compatibility, vLLM), provide the base_url here:
 base_url: "http://localhost:1234/v1"
 history_file: chat_history.json
 model: "hermes-local"
+
+# Settings for llm_provider: opencode. Requires the `opencode` CLI on PATH.
+opencode:
+  command: opencode
+  model: opencode/big-pickle
+  agent: voice-chat
+  timeout: 180
+
 presets:
   default:
     system_prompt: |
@@ -37,6 +49,25 @@ sovits_ping_config:
 ```
 
 You can define personalities and connect to different local runners by modifying the config file.
+
+Conversation history is stored in `history_file` (default `chat_history.json`). If that file is ever unreadable (empty, corrupt, or the wrong shape), the assistant starts a fresh conversation and moves the bad file to `chat_history.json.corrupt` instead of crashing.
+
+### Using the `opencode` CLI as the LLM backend
+
+Set `llm_provider: opencode` to run conversations through the local [`opencode`](https://opencode.ai) CLI instead of an HTTP endpoint. This needs **no API key** and can use opencode's anonymous free-tier models.
+
+1. Install the `opencode` CLI and make sure it is on your `PATH`:
+   ```bash
+   opencode --version
+   ```
+2. Set `llm_provider: opencode` in `character_config.yaml` and pick a free model, e.g. `opencode/big-pickle`.
+3. That's it — the assistant runs `opencode run` per turn, feeding the conversation in and echoing the reply into the same `chat_history.json` used by the OpenAI backend, so you can switch providers freely.
+
+The project ships an `opencode.json` that defines a `voice-chat` agent (configured via `opencode.agent`). It disables every tool except `read`, which keeps replies fast and conversational.
+
+> **Free-tier note:** the opencode free tier requires the `read` tool to stay enabled **and** allowed. Disabling or denying `read` makes the free tier return `403 FreeTierError`. If you use a paid model/account, you can disable `read` too.
+>
+> **Emoji:** local models may reply with emoji, which text-to-speech reads awkwardly. Add "Do not use emoji." to `system_prompt` if you want clean speech.
 
 
 ## 🛠️ Setup

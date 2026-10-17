@@ -4,17 +4,40 @@ import yaml
 import gradio as gr
 import json
 import os
-from openai import OpenAI
+import copy
+
+try:
+    from .opencode_llm import get_opencode_response
+except ImportError:
+    from opencode_llm import get_opencode_response
 
 with open('character_config.yaml', 'r') as f:
     char_config = yaml.safe_load(f)
 
-# Connects to OpenAI API by default. For local AI endpoints, it will use base_url if present.
-client_args = {"api_key": char_config.get('OPENAI_API_KEY', 'sk-local')}
-if 'base_url' in char_config and char_config['base_url']:
-    client_args['base_url'] = char_config['base_url']
+# LLM backend selection: "openai" (any OpenAI-compatible endpoint) or "opencode".
+LLM_PROVIDER = char_config.get('llm_provider', 'openai')
 
-client = OpenAI(**client_args)
+# Settings for the opencode CLI backend.
+opencode_config = char_config.get('opencode', {}) or {}
+OPENCODE_COMMAND = opencode_config.get('command', 'opencode')
+OPENCODE_MODEL = opencode_config.get('model')
+OPENCODE_AGENT = opencode_config.get('agent')
+OPENCODE_TIMEOUT = opencode_config.get('timeout', 180)
+
+# The OpenAI client is created lazily so the opencode backend works even when
+# the openai package or a server endpoint is not available.
+client = None
+
+def get_client():
+    global client
+    if client is None:
+        from openai import OpenAI
+        # Connects to OpenAI API by default. For local AI endpoints, it will use base_url if present.
+        client_args = {"api_key": char_config.get('OPENAI_API_KEY', 'sk-local')}
+        if 'base_url' in char_config and char_config['base_url']:
+            client_args['base_url'] = char_config['base_url']
+        client = OpenAI(**client_args)
+    return client
 
 # Constants
 HISTORY_FILE = char_config['history_file']
@@ -32,15 +55,41 @@ SYSTEM_PROMPT =  [
     ]
 
 # Load/save chat history
+def _quarantine_bad_history():
+    """Move an unreadable/unusable history file aside so it is not re-read."""
+    backup = HISTORY_FILE + ".corrupt"
+    try:
+        if os.path.exists(backup):
+            os.remove(backup)
+        os.replace(HISTORY_FILE, backup)
+        print(f"[llm_scr] Unreadable history moved to '{backup}'.")
+    except OSError as exc:
+        print(f"[llm_scr] Could not quarantine '{HISTORY_FILE}': {exc}")
+
+
 def load_history():
-    if os.path.exists(HISTORY_FILE):
-        with open(HISTORY_FILE, "r") as f:
-            return json.load(f)
-    return SYSTEM_PROMPT
+    if not os.path.exists(HISTORY_FILE):
+        return copy.deepcopy(SYSTEM_PROMPT)
+    try:
+        with open(HISTORY_FILE, "r", encoding="utf-8") as f:
+            history = json.load(f)
+    except (json.JSONDecodeError, ValueError, OSError) as exc:
+        print(f"[llm_scr] Warning: could not read '{HISTORY_FILE}' ({exc}); starting fresh.")
+        _quarantine_bad_history()
+        return copy.deepcopy(SYSTEM_PROMPT)
+    if not isinstance(history, list) or not history:
+        print(f"[llm_scr] Warning: '{HISTORY_FILE}' is not a message list; starting fresh.")
+        _quarantine_bad_history()
+        return copy.deepcopy(SYSTEM_PROMPT)
+    return history
 
 def save_history(history):
-    with open(HISTORY_FILE, "w") as f:
+    # Write to a temp file then replace, so an interrupted write can't leave a
+    # half-written (corrupt) history behind.
+    tmp_path = HISTORY_FILE + ".tmp"
+    with open(tmp_path, "w", encoding="utf-8") as f:
         json.dump(history, f, indent=2)
+    os.replace(tmp_path, HISTORY_FILE)
 
 
 
@@ -59,7 +108,7 @@ def get_ai_response_no_tool(messages):
         else:
              standard_messages.append({"role": msg["role"], "content": msg["content"]})
 
-    response = client.chat.completions.create(
+    response = get_client().chat.completions.create(
         model=MODEL,
         messages=standard_messages,
         temperature=0.7,
@@ -84,9 +133,17 @@ def llm_response(user_input):
     })
 
 
-    ai_test_response = get_ai_response_no_tool(messages)
-
-    response_text = ai_test_response.choices[0].message.content
+    if LLM_PROVIDER == 'opencode':
+        response_text = get_opencode_response(
+            messages,
+            command=OPENCODE_COMMAND,
+            model=OPENCODE_MODEL,
+            agent=OPENCODE_AGENT,
+            timeout=OPENCODE_TIMEOUT,
+        )
+    else:
+        ai_test_response = get_ai_response_no_tool(messages)
+        response_text = ai_test_response.choices[0].message.content
 
     # just append assistant message to regular response. 
     messages.append({

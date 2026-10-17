@@ -1,8 +1,19 @@
+# LLM backend: "openai" uses any OpenAI-compatible endpoint (see base_url below);
+# "opencode" drives the locally installed `opencode` CLI (supports the free tier).
+llm_provider: openai
+
 OPENAI_API_KEY: sk-local
 # To use a local API (e.g., LM Studio, Ollama with OpenAI compatibility, vLLM), provide the base_url here:
 base_url: "http://localhost:1234/v1"
 history_file: chat_history.json
 model: "hermes-local"
+
+# Settings for llm_provider: opencode. Requires the `opencode` CLI on PATH.
+opencode:
+  command: opencode
+  model: opencode/big-pickle
+  agent: voice-chat
+  timeout: 180
 presets:
   default:
     system_prompt: |

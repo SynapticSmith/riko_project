@@ -1,0 +1,23 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "agent": {
+    "voice-chat": {
+      "mode": "primary",
+      "description": "Tool-restricted conversational agent for the local voice assistant",
+      "prompt": "You are a conversational voice assistant. Reply in natural, concise spoken language. Do not read files or use any tools; just answer the conversation.",
+      "tools": {
+        "bash": false,
+        "edit": false,
+        "write": false,
+        "glob": false,
+        "grep": false,
+        "list": false,
+        "webfetch": false,
+        "websearch": false,
+        "task": false,
+        "todowrite": false,
+        "read": true
+      }
+    }
+  }
+}
