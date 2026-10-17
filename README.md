@@ -1,11 +1,11 @@
-# Project Riko
+# Local AI Voice Assistant
 
-Project Riko is a anime focused LLM project by Just Rayen. She listens, and remembers your conversations. It combines OpenAI’s GPT, GPT-SoVITS voice synthesis, and Faster-Whisper ASR into a fully configurable conversational pipeline.
+This project provides a local AI conversational assistant. It listens, remembers your conversations, and responds using local models. It combines OpenAI-compatible LLM endpoints, GPT-SoVITS voice synthesis, and Faster-Whisper ASR into a fully configurable pipeline.
 
 **tested with python 3.10 Windows >10 and Linux Ubuntu**
 ## ✨ Features
 
-- 💬 **LLM-based dialogue** using OpenAI API (configurable system prompts)
+- 💬 **LLM-based dialogue** using any OpenAI-compatible local AI (e.g., LM Studio, Ollama, Hermes)
 - 🧠 **Conversation memory** to keep context during interactions
 - 🔊 **Voice generation** via GPT-SoVITS API
 - 🎧 **Speech recognition** using Faster-Whisper
@@ -14,28 +14,29 @@ Project Riko is a anime focused LLM project by Just Rayen. She listens, and reme
 
 ## ⚙️ Configuration
 
-All prompts and parameters are stored in `config.yaml`.
+All prompts and parameters are stored in `character_config.yaml`.
 
 ```yaml
-OPENAI_API_KEY: sk-YOURAPIKEY
+OPENAI_API_KEY: sk-local
+# To use a local API (e.g., LM Studio, Ollama with OpenAI compatibility, vLLM), provide the base_url here:
+base_url: "http://localhost:1234/v1"
 history_file: chat_history.json
-model: "gpt-4.1-mini"
+model: "hermes-local"
 presets:
   default:
     system_prompt: |
-      You are a helpful assistant named Riko.
-      You speak like a snarky anime girl.
-      Always refer to the user as "senpai".
+      You are a helpful, neutral AI assistant.
+      You provide clear, accurate, and concise answers.
 
 sovits_ping_config:
   text_lang: en
   prompt_lang : en
-  ref_audio_path : D:\PyProjects\waifu_project\riko_project\character_files\main_sample.wav
-  prompt_text : This is a sample voice for you to just get started with because it sounds kind of cute but just make sure this doesn't have long silences.
+  ref_audio_path : character_files/main_sample.wav
+  prompt_text : This is a sample voice for the text to speech synthesis.
   
-````
+```
 
-You can define personalities by modiying the config file.
+You can define personalities and connect to different local runners by modifying the config file.
 
 
 ## 🛠️ Setup
@@ -67,11 +68,11 @@ python main_chat.py
 
 The flow:
 
-1. Riko listens to your voice via microphone (push to talk)
+1. The AI listens to your voice via microphone (push to talk)
 2. Transcribes it with Faster-Whisper
-3. Passes it to GPT (with history)
+3. Passes it to the local LLM (with history)
 4. Generates a response
-5. Synthesizes Riko's voice using GPT-SoVITS
+5. Synthesizes the AI's voice using GPT-SoVITS
 6. Plays the output back to you
 
 
@@ -80,18 +81,18 @@ The flow:
 * [ ] GUI or web interface
 * [ ] Live microphone input support
 * [ ] Emotion or tone control in speech synthesis
-* [ ] VRM model frontend
+* [ ] Frontend interface
 
 
 ## 🧑‍🎤 Credits
 
 * Voice synthesis powered by [GPT-SoVITS](https://github.com/RVC-Boss/GPT-SoVITS)
 * ASR via [Faster-Whisper](https://github.com/SYSTRAN/faster-whisper)
-* Language model via [OpenAI GPT](https://platform.openai.com)
+* Language model originally powered by [OpenAI GPT](https://platform.openai.com)
 
 
 ## 📜 License
 
-MIT — feel free to clone, modify, and build your own waifu voice companion.
+MIT — feel free to clone, modify, and build your own local AI voice companion.
 
 

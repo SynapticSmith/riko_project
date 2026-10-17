@@ -1,16 +1,17 @@
-OPENAI_API_KEY: sk-YOURAPIKEY
+OPENAI_API_KEY: sk-local
+# To use a local API (e.g., LM Studio, Ollama with OpenAI compatibility, vLLM), provide the base_url here:
+base_url: "http://localhost:1234/v1"
 history_file: chat_history.json
-model: "gpt-4.1-mini"
+model: "hermes-local"
 presets:
   default:
     system_prompt: |
-      You are a helpful assistant named Riko.
-      You speak like a snarky anime girl.
-      Always refer to the user as "senpai".
+      You are a helpful, neutral AI assistant.
+      You provide clear, accurate, and concise answers.
 
 sovits_ping_config:
   text_lang: en
   prompt_lang : en
-  ref_audio_path : D:\PyProjects\waifu_project\riko_project\character_files\main_sample.wav
-  prompt_text : This is a sample voice for you to just get started with because it sounds kind of cute but just make sure this doesn't have long silences.
+  ref_audio_path : character_files/main_sample.wav
+  prompt_text : This is a sample voice for the text to speech synthesis.
   
