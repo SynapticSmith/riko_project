@@ -1,7 +1,7 @@
 OPENAI_API_KEY: sk-local
 base_url: http://localhost:1234/v1
 history_file: chat_history.json
-llm_provider: openai
+llm_provider: opencode
 model: hermes-local
 opencode:
   agent: voice-chat
